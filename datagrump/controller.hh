@@ -11,6 +11,9 @@ private:
   bool debug_; /* Enables debugging output */
 
   /* Add member variables here */
+  unsigned int cwnd = 16; /* Congestion window in number of datagrams */
+  unsigned int ssthresh = cwnd/2; /* Guess of a safe operating point for the window in number of datagrams */
+  unsigned int num_acks = 0; /* Number of acks received since last window increase */
 
 public:
   /* Public interface for the congestion controller */

@@ -14,7 +14,7 @@ Controller::Controller( const bool debug )
 unsigned int Controller::window_size()
 {
   /* Default: fixed window size of 100 outstanding datagrams */
-  unsigned int the_window_size = 17;
+  unsigned int the_window_size = cwnd; /* window size in datagrams */
 
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
@@ -38,6 +38,11 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
     cerr << "At time " << send_timestamp
 	 << " sent datagram " << sequence_number << " (timeout = " << after_timeout << ")\n";
   }
+
+  unsigned int b = 1/2;
+  if (after_timeout) {
+    cwnd = cwnd * b;
+  }
 }
 
 /* An ack was received */
@@ -59,11 +64,18 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 	 << ", received @ time " << recv_timestamp_acked << " by receiver's clock)"
 	 << endl;
   }
+
+  float a = 0.125;
+  num_acks++;
+  if (num_acks >= cwnd/a) {
+    num_acks -= cwnd/a;
+    cwnd += 1;
+  }
 }
 
 /* How long to wait (in milliseconds) if there are no acks
    before sending one more datagram */
 unsigned int Controller::timeout_ms()
 {
-  return 1000; /* timeout of one second */
+  return 100; /* timeout of one second */
 }
