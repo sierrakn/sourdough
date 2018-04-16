@@ -62,6 +62,8 @@ private:
 
   double pacing_gain;
 
+  uint64_t next_send_time;
+
   /* Removes samples that have timed out from a filter */
   static void remove_old_samples(std::vector<sample>& filter, uint64_t time_now, unsigned int timeout); 
 
@@ -77,6 +79,7 @@ public:
   /* A datagram was sent */
   void datagram_was_sent( const uint64_t sequence_number,
 			  const uint64_t send_timestamp,
+        const uint64_t payload_length,
 			  const bool after_timeout );
 
   /* An ack was received */
@@ -91,6 +94,9 @@ public:
   unsigned int timeout_ms();
 
   /* Returns true if inflight packets is < cwnd_gain * bdp */
+  bool window_is_open();
+
+  /* Returns true if time is >= next send time */
   bool should_send_packet();
 };
 

@@ -109,13 +109,13 @@ void DatagrumpSender::send_datagram( const bool after_timeout )
   /* Inform congestion controller */
   controller_.datagram_was_sent( cm.header.sequence_number,
 				 cm.header.send_timestamp,
+         1424,
 				 after_timeout );
 }
 
 bool DatagrumpSender::window_is_open()
 {
-  //TODO: next send time
-  return controller_.should_send_packet();
+  return controller_.window_is_open();
   // return sequence_number_ - next_ack_expected_ < controller_.window_size();
 }
 
@@ -129,12 +129,13 @@ int DatagrumpSender::loop()
   poller.add_action( Action( socket_, Direction::Out, [&] () {
 	/* Close the window */
 	while ( window_is_open() ) {
-	  send_datagram( false );
+    send_datagram( false );
 	}
 	return ResultType::Continue;
       },
       /* We're only interested in this rule when the window is open */
       [&] () { return window_is_open(); } ) );
+
 
   /* second rule: if sender receives an ack,
      process it and inform the controller
