@@ -98,6 +98,14 @@ void DatagrumpSender::got_ack( const uint64_t timestamp,
 
 void DatagrumpSender::send_datagram( const bool after_timeout )
 {
+  
+  if (!controller_.should_send_packet()) {
+    // wait for ack or retransmission timeout 
+    return;
+  }
+
+  //TODO: next send time
+
   /* All messages use the same dummy payload */
   static const string dummy_payload( 1424, 'x' );
 

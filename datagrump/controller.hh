@@ -45,10 +45,14 @@ private:
   float btlbw_estimate; 
   
 
-  float cwnd_gain;
-  float pacing_gain;
-
   unsigned int startup_rounds_without_increase;
+
+  unsigned int cwnd = 50;
+
+  /* Multiplier of bdp to calculate allowed # inflight packets */
+  float cwnd_gain;
+
+  float pacing_gain;
 
   static void remove_old_samples(uint64_t time_now, unsigned int timeout, std::vector<sample>& filter); /* Removes samples that have timed out from a filter */
 
@@ -76,6 +80,9 @@ public:
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
   unsigned int timeout_ms();
+
+  /* Returns true if inflight packets is < cwnd_gain * bdp */
+  bool should_send_packet();
 };
 
 #endif

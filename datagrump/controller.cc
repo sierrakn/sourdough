@@ -11,22 +11,21 @@ using namespace std;
 Controller::Controller( const bool debug )
   : debug_( debug ), rt_sample_timeout(10000), rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(10000),
-      btlbw_filter(), btlbw_estimate(0), cwnd_gain(2 / log(2)),
-      pacing_gain(2 / log(2)), startup_rounds_without_increase(0)
+      btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
+      cwnd_gain(2 / log(2)),
+      pacing_gain(2 / log(2))
 {}
 
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size()
-{
-  // TODO have this depend on estimates and cwnd_gain (also have to change sender for pacing)
-  unsigned int the_window_size = 50;
+{  
 
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
-	 << " window size is " << the_window_size << endl;
+	 << " window size is " << cwnd << endl;
   }
 
-  return the_window_size;
+  return cwnd;
 }
 
 /* A datagram was sent */
@@ -42,7 +41,6 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 	 << " sent datagram " << sequence_number << " (timeout = " << after_timeout << ")\n";
   }
 
-  const uint64_t bdp = rt_estimate * btlbw_estimate;
 }
 
 /* An ack was received 
@@ -92,6 +90,15 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 unsigned int Controller::timeout_ms()
 {
   return 1000; /* timeout of one second */
+}
+
+bool Controller::should_send_packet()
+{
+  const uint64_t bdp = rt_estimate * btlbw_estimate;
+  if (cwnd >= bdp * cwnd_gain) {
+    return false;
+  }
+  return true;
 }
 
 /* Max time (in milliseconds) a delivery rate sample is valid */
