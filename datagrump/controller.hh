@@ -9,20 +9,41 @@
 class Controller
 {
 private:
+
+  /* Encapsulates an observation about network behavior */
+  typedef struct sample {
+    float data_point;
+    uint64_t time_seen;
+
+    sample(float data_point, uint64_t time_seen): data_point(data_point), time_seen(time_seen) {}
+
+    bool operator <(const sample& rhs) {
+      return time_seen < rhs.time_seen;
+    }
+  } sample;
+
   bool debug_; /* Enables debugging output */
 
-  /* Add member variables here */
-  unsigned int cwnd = 16; /* Congestion window in number of datagrams */
-  unsigned int num_acks = 0; /* Number of acks received since last window increase */
+  std::vector<sample> rt_filter; /* Tracks observed RTTs */
+  float rt_estimate; /* Current propagation delay estimate */
+  unsigned int rt_sample_timeout; /* Max time (in milliseconds) an rt sample is valid */
 
-  uint64_t min_rtt = 0; /* Min round trip time of last num_rtts packets */
-  unsigned int num_rtts = 5;
-  std::vector<uint64_t> rtts; 
+  uint64_t rt_estimate_last_updated; /* Time (in milliseconds) since estimate was updated */
+  unsigned int stale_update_threshold; /* Max time (in milliseconds) an rt estimate can remain the same before we probe for a new estimate */
+
+  std::vector<sample> btl_bw_filter; /* Tracks observed delivery rates */
+  float btl_bw_estimate; /* Current bottleneck bandwidth estimate */
+  unsigned int btl_bw_sample_timeout(); /* Max time (in milliseconds) a delivery rate sample is valid */
+
+  float cwnd_gain;
+  float pacing_gain;
+
+  unsigned int startup_rounds_without_increase;
+
+  static void remove_old_samples(uint64_t time_now, unsigned int timeout, std::vector<sample>& filter); /* Removes samples that have timed out from a filter */
 
 public:
   /* Public interface for the congestion controller */
-  /* You can change these if you prefer, but will need to change
-     the call site as well (in sender.cc) */
 
   /* Default constructor */
   Controller( const bool debug );
