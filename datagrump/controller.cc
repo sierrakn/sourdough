@@ -9,7 +9,7 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), rt_filter(), rt_estimate(0), rt_sample_timeout(10000),
+  : debug_( debug ), rt_sample_timeout(10000), rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(10000),
       btlbw_filter(), btlbw_estimate(0), cwnd_gain(2 / log(2)),
       pacing_gain(2 / log(2)), startup_rounds_without_increase(0)
@@ -42,7 +42,7 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 	 << " sent datagram " << sequence_number << " (timeout = " << after_timeout << ")\n";
   }
 
-  // TODO implement
+  const uint64_t bdp = rt_estimate * btlbw_estimate;
 }
 
 /* An ack was received 
