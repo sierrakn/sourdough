@@ -15,10 +15,10 @@ private:
   /* Stores data point of network behavior at a specific time.
    * EG, rtt of packet or delivery rate. */
   typedef struct sample {
-    float data_point;
+    double data_point;
     uint64_t time_seen;
 
-    sample(float data_point, uint64_t time_seen): data_point(data_point), time_seen(time_seen) {}
+    sample(double data_point, uint64_t time_seen): data_point(data_point), time_seen(time_seen) {}
 
     bool operator <(const sample& rhs) {
       return time_seen < rhs.time_seen;
@@ -36,8 +36,8 @@ private:
   /* All observed RTTs within time window rt_sample_timeout*/
   std::vector<sample> rt_filter; 
   /* Current propagation delay (RTprop) estimate */
-  float rt_estimate; 
-  
+  double rt_estimate; 
+
 
   uint64_t rt_estimate_last_updated; /* Time (in milliseconds) since estimate was updated */
   unsigned int stale_update_threshold; /* Max time (in milliseconds) an rt estimate can remain the same before we probe for a new estimate */
@@ -47,19 +47,23 @@ private:
   /* Observed delivery rates within time window btl_bw_sample_timeout() */
   std::vector<sample> btlbw_filter; 
   /* Current bottleneck bandwidth estimate >= delivery rate */
-  float btlbw_estimate; 
+  double btlbw_estimate; 
   
 
   unsigned int startup_rounds_without_increase;
 
-  unsigned int cwnd = 50;
+  unsigned int cwnd;
+
+  /* Number of inflight packets */
+  unsigned int inflight;
 
   /* Multiplier of bdp to calculate allowed # inflight packets */
-  float cwnd_gain;
+  double cwnd_gain;
 
-  float pacing_gain;
+  double pacing_gain;
 
-  static void remove_old_samples(uint64_t time_now, unsigned int timeout, std::vector<sample>& filter); /* Removes samples that have timed out from a filter */
+  /* Removes samples that have timed out from a filter */
+  static void remove_old_samples(std::vector<sample>& filter, uint64_t time_now, unsigned int timeout); 
 
 public:
   /* Public interface for the congestion controller */
