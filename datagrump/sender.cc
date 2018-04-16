@@ -92,7 +92,8 @@ void DatagrumpSender::got_ack( const uint64_t timestamp,
   controller_.ack_received( ack.header.ack_sequence_number,
 			    ack.header.ack_send_timestamp,
 			    ack.header.ack_recv_timestamp,
-			    timestamp );
+			    timestamp,
+          ack.header.ack_payload_length);
 }
 
 void DatagrumpSender::send_datagram( const bool after_timeout )

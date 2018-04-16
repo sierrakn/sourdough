@@ -10,7 +10,8 @@ class Controller
 {
 private:
 
-  /* Encapsulates an observation about network behavior */
+  /* Stores data point of network behavior at a specific time.
+   * EG, rtt of packet or delivery rate. */
   typedef struct sample {
     float data_point;
     uint64_t time_seen;
@@ -24,16 +25,25 @@ private:
 
   bool debug_; /* Enables debugging output */
 
-  std::vector<sample> rt_filter; /* Tracks observed RTTs */
-  float rt_estimate; /* Current propagation delay estimate */
-  unsigned int rt_sample_timeout; /* Max time (in milliseconds) an rt sample is valid */
+  /* Max time (in milliseconds) an rt sample is valid.
+   * Time windo for RTProp calculation*/
+  unsigned int rt_sample_timeout; 
+  /* All observed RTTs within time window rt_sample_timeout*/
+  std::vector<sample> rt_filter; 
+  /* Current propagation delay (RTprop) estimate */
+  float rt_estimate; 
+  
 
   uint64_t rt_estimate_last_updated; /* Time (in milliseconds) since estimate was updated */
   unsigned int stale_update_threshold; /* Max time (in milliseconds) an rt estimate can remain the same before we probe for a new estimate */
 
-  std::vector<sample> btl_bw_filter; /* Tracks observed delivery rates */
-  float btl_bw_estimate; /* Current bottleneck bandwidth estimate */
-  unsigned int btl_bw_sample_timeout(); /* Max time (in milliseconds) a delivery rate sample is valid */
+  /* Max time (in milliseconds) a delivery rate sample is valid */
+  unsigned int btlbw_sample_timeout(); 
+  /* Observed delivery rates within time window btl_bw_sample_timeout() */
+  std::vector<sample> btlbw_filter; 
+  /* Current bottleneck bandwidth estimate >= delivery rate */
+  float btlbw_estimate; 
+  
 
   float cwnd_gain;
   float pacing_gain;
@@ -60,7 +70,8 @@ public:
   void ack_received( const uint64_t sequence_number_acked,
 		     const uint64_t send_timestamp_acked,
 		     const uint64_t recv_timestamp_acked,
-		     const uint64_t timestamp_ack_received );
+		     const uint64_t timestamp_ack_received,
+         const uint64_t payload_length);
 
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
