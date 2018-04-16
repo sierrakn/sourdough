@@ -2,6 +2,7 @@
 #define CONTROLLER_HH
 
 #include <cstdint>
+#include <vector> 
 
 /* Congestion controller interface */
 
@@ -14,6 +15,10 @@ private:
   unsigned int cwnd = 16; /* Congestion window in number of datagrams */
   unsigned int ssthresh = cwnd/2; /* Guess of a safe operating point for the window in number of datagrams */
   unsigned int num_acks = 0; /* Number of acks received since last window increase */
+
+  uint64_t min_rtt = 0; /* Min round trip time of last num_rtts packets */
+  unsigned int num_rtts = 5;
+  std::vector<uint64_t> rtts; 
 
 public:
   /* Public interface for the congestion controller */

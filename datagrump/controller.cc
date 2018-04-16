@@ -2,6 +2,7 @@
 
 #include "controller.hh"
 #include "timestamp.hh"
+#include <algorithm>
 
 using namespace std;
 
@@ -53,7 +54,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 			       const uint64_t recv_timestamp_acked,
 			       /* when the acknowledged datagram was received (receiver's clock)*/
 			       const uint64_t timestamp_ack_received )
-                               /* when the ack was received (by sender) */
+             /* when the ack was received (by sender) */
 {
   /* Default: take no action */
 
@@ -64,6 +65,13 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 	 << ", received @ time " << recv_timestamp_acked << " by receiver's clock)"
 	 << endl;
   }
+
+  uint64_t rtt = timestamp_ack_received - send_timestamp_acked;
+  rtts.push_back(rtt);
+  if (rtts.size() > num_rtts) {
+    rtts.erase(rtts.begin());
+  }
+  min_rtt = *std::min_element(rtts.begin(), rtts.end());
 
   float a = 0.5;
   num_acks++;
