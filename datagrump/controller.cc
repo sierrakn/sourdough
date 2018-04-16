@@ -14,8 +14,7 @@ Controller::Controller( const bool debug )
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size()
 {
-  /* Default: fixed window size of 100 outstanding datagrams */
-  unsigned int the_window_size = cwnd; /* window size in datagrams */
+  unsigned int the_window_size = cwnd;
 
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
@@ -40,7 +39,11 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 	 << " sent datagram " << sequence_number << " (timeout = " << after_timeout << ")\n";
   }
 
+<<<<<<< HEAD
   float b = 0.2;
+=======
+  float b = 0.5;
+>>>>>>> 15ca38af691f739093bf1385b07a469cca92dc4d
   if (after_timeout) {
     cwnd = cwnd * b;
   }
