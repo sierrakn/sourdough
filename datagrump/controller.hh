@@ -10,6 +10,8 @@ class Controller
 {
 private:
 
+  enum bbr_state {STARTUP, DRAIN, PROBE_BW, PROBE_RTT};
+
   /* Stores data point of network behavior at a specific time.
    * EG, rtt of packet or delivery rate. */
   typedef struct sample {
@@ -24,6 +26,9 @@ private:
   } sample;
 
   bool debug_; /* Enables debugging output */
+
+  /* Current state in the BBR FSM */
+  bbr_state state;
 
   /* Max time (in milliseconds) an rt sample is valid.
    * Time windo for RTProp calculation*/
