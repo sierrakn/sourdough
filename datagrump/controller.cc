@@ -9,11 +9,12 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), state(STARTUP), rt_sample_timeout(10000), 
+  : debug_( debug ), state(STARTUP), rt_sample_timeout(1000), 
       rt_filter(), rt_estimate(0),
-      rt_estimate_last_updated(0), stale_update_threshold(10000),
+      rt_estimate_last_updated(0), stale_update_threshold(1000),
       btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
-      cwnd(1), inflight(0), cwnd_gain(2 / log(2)), pacing_gain(2 / log(2)),
+      cwnd(1), inflight(0), delivered(0), delivered_time(0),
+      cwnd_gain(2 / log(2)), pacing_gain(2 / log(2)),
       next_send_time(0)
 {}
 
@@ -45,7 +46,10 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 
   // cerr << "payload_length = " << payload_length << " btlbw_estimate= " << btlbw_estimate << endl;
   inflight++;
-  next_send_time = send_timestamp + (payload_length / (pacing_gain * btlbw_estimate));
+
+  //TODO: delete?
+  // next_send_time = send_timestamp + payload_length / (pacing_gain * btlbw_estimate);
+  next_send_time = send_timestamp;
   if (debug_) {
     cerr << "pacing_gain = " << pacing_gain << "time " << (payload_length / (pacing_gain * btlbw_estimate)) << endl;
   }
@@ -63,8 +67,10 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 			       /* when the acknowledged datagram was received (receiver's clock)*/
 			       const uint64_t timestamp_ack_received, 
              /* when the ack was received (by sender) */
-             const uint64_t payload_length)
+             const uint64_t payload_length,
              /* payload length of message acked */
+             const uint64_t packet_delivered,
+             const uint64_t packet_delivered_time)
 {
   if ( debug_ ) {
     cerr << "At time " << timestamp_ack_received
@@ -74,6 +80,8 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    << ", payload length = " << payload_length
 	 << endl;
   }
+
+  // cerr << "packet_delivered " << packet_delivered << " packet_delivered_time " << packet_delivered_time << endl;
 
   inflight--;
   double rtt = timestamp_ack_received - send_timestamp_acked;
@@ -88,11 +96,12 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   }
   // TODO deal with no update in 10 seconds, initial estimates
 
+  delivered += payload_length;
+  delivered_time = timestamp_ack_received;
   // Calculate new BtlBw estimate
-  double delivery_rate = payload_length / rtt;
+  double delivery_rate = (delivered - packet_delivered) / (delivered_time - packet_delivered_time);
   btlbw_filter.emplace_back(delivery_rate, timestamp_ack_received);
   remove_old_samples(btlbw_filter, timestamp_ack_received, btlbw_sample_timeout());
-  cerr << "btlbw " << btlbw_filter.size() << endl;
   sample max_btlbw_sample = *std::max_element(btlbw_filter.begin(), btlbw_filter.end());
   btlbw_estimate = max_btlbw_sample.data_point;
 
@@ -110,11 +119,13 @@ bool Controller::window_is_open()
 {
   const uint64_t bdp = rt_estimate * btlbw_estimate;
   unsigned int cwnd = bdp * cwnd_gain;
+
+  cerr << "inflight = " << inflight << "cwnd = " << cwnd << endl;
+
   if (cwnd == 0) {
-    cwnd = 1; 
+    cwnd = 5; 
   }
   
-  cerr << "inflight = " << inflight << "cwnd = " << cwnd << endl;
   if (inflight >= cwnd) {
     return false;
   }
@@ -133,9 +144,20 @@ unsigned int Controller::btlbw_sample_timeout() {
 }
 
 /* Removes sample data points that have timed out from a filter */
-void Controller::remove_old_samples(std::vector<sample>& filter, uint64_t time_now, unsigned int timeout) {
-  std::remove_if(filter.begin(), filter.end(), 
+void Controller::remove_old_samples(std::vector<sample>& filter, uint64_t time_now, uint64_t timeout) {
+  filter.erase(std::remove_if(filter.begin(), filter.end(), 
    [time_now, timeout](const sample& s) { 
-    return time_now - s.time_seen > timeout; 
-  });
+    return (time_now - s.time_seen) > timeout; 
+  }), filter.end());
+}
+
+uint64_t Controller::get_delivered() {
+  return delivered;
+}
+
+uint64_t Controller::get_delivered_time() {
+  if (delivered_time == 0) {
+    delivered_time = timestamp_ms();
+  }
+  return delivered_time;
 }

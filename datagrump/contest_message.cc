@@ -25,7 +25,9 @@ ContestMessage::Header::Header( const string & str )
     ack_sequence_number( get_header_field( 2, str ) ),
     ack_send_timestamp( get_header_field( 3, str ) ),
     ack_recv_timestamp( get_header_field( 4, str ) ),
-    ack_payload_length( get_header_field( 5, str ) )
+    ack_payload_length( get_header_field( 5, str ) ),
+    delivered( get_header_field( 6, str ) ),
+    delivered_time( get_header_field( 7, str ) )
 {}
 
 /* Parse incoming message from wire */
@@ -56,7 +58,9 @@ string ContestMessage::Header::to_string() const
     + put_header_field( ack_sequence_number )
     + put_header_field( ack_send_timestamp )
     + put_header_field( ack_recv_timestamp )
-    + put_header_field( ack_payload_length );
+    + put_header_field( ack_payload_length )
+    + put_header_field( delivered )
+    + put_header_field( delivered_time );
 }
 
 /* Make wire representation of message */
@@ -86,19 +90,25 @@ void ContestMessage::transform_into_ack( const uint64_t sequence_number,
 
 /* New message */
 ContestMessage::ContestMessage( const uint64_t s_sequence_number,
+        const uint64_t delivered,
+        const uint64_t delivered_time,
 				const std::string & s_payload )
-  : header( s_sequence_number ),
+  : header( s_sequence_number, delivered, delivered_time ),
     payload( s_payload )
 {}
 
 /* Header for new message */
-ContestMessage::Header::Header( const uint64_t s_sequence_number )
+ContestMessage::Header::Header( const uint64_t s_sequence_number,
+        const uint64_t delivered,
+        const uint64_t delivered_time)
   : sequence_number( s_sequence_number ),
     send_timestamp( -1 ),
     ack_sequence_number( -1 ),
     ack_send_timestamp( -1 ),
     ack_recv_timestamp( -1 ),
-    ack_payload_length( -1 )
+    ack_payload_length( -1 ),
+    delivered( delivered ),
+    delivered_time ( delivered_time )
 {}
 
 /* Is this message an ack? */

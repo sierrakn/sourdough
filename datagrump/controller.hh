@@ -57,6 +57,10 @@ private:
   /* Number of inflight packets */
   unsigned int inflight;
 
+  uint64_t delivered;
+
+  uint64_t delivered_time;
+
   /* Multiplier of bdp to calculate allowed # inflight packets */
   double cwnd_gain;
 
@@ -65,7 +69,7 @@ private:
   uint64_t next_send_time;
 
   /* Removes samples that have timed out from a filter */
-  static void remove_old_samples(std::vector<sample>& filter, uint64_t time_now, unsigned int timeout); 
+  static void remove_old_samples(std::vector<sample>& filter, uint64_t time_now, uint64_t timeout); 
 
 public:
   /* Public interface for the congestion controller */
@@ -87,7 +91,9 @@ public:
 		     const uint64_t send_timestamp_acked,
 		     const uint64_t recv_timestamp_acked,
 		     const uint64_t timestamp_ack_received,
-         const uint64_t payload_length);
+         const uint64_t payload_length,
+         const uint64_t packet_delivered,
+         const uint64_t packet_delivered_time);
 
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
@@ -98,6 +104,10 @@ public:
 
   /* Returns true if time is >= next send time */
   bool should_send_packet();
+
+  uint64_t get_delivered();
+
+  uint64_t get_delivered_time();
 };
 
 #endif

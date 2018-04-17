@@ -15,8 +15,13 @@ struct ContestMessage
     uint64_t ack_recv_timestamp;
     uint64_t ack_payload_length;
 
+    uint64_t delivered;
+    uint64_t delivered_time;
+
     /* Header for new message */
-    Header( const uint64_t s_sequence_number );
+    Header( const uint64_t s_sequence_number,
+        const uint64_t delivered,
+        const uint64_t delivered_time );
 
     /* Parse header from wire */
     Header( const std::string & str );
@@ -29,6 +34,8 @@ struct ContestMessage
 
   /* New message */
   ContestMessage( const uint64_t s_sequence_number,
+      const uint64_t delivered,
+      const uint64_t delivered_time,
 		  const std::string & s_payload );
 
   /* Parse incoming datagram from wire */
