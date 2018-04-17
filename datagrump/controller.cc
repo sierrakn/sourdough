@@ -117,15 +117,15 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   btlbw_estimate = max_btlbw_sample.data_point;
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
-  if (rtt > rt_estimate*1.5) {
+  if (rtt > rt_estimate) {
     num_congested++;
-    if (num_congested > 2) {
+    if (num_congested > 5) {
       cwnd--;
       num_congested = 0;
     }
   }
 
-  float a = 1;
+  float a = 1.5;
   num_acks++;
   if (num_acks >= cwnd/a) {
     num_acks -= cwnd/a;
