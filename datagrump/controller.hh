@@ -30,6 +30,7 @@ private:
   /* Current state in the BBR FSM */
   bbr_state state;
 
+  unsigned int num_acks;
   /* Max time (in milliseconds) an rt sample is valid.
    * Time windo for RTProp calculation*/
   unsigned int rt_sample_timeout; 
