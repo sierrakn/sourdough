@@ -9,11 +9,11 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), state(STARTUP), num_acks(0), rt_sample_timeout(10000), 
+  : debug_( debug ), state(STARTUP), num_congested(0),num_acks(0), rt_sample_timeout(10000), 
       rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(1000),
       btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
-      cwnd(5), num_packets_delivered(0), inflight(0), delivered(0), delivered_time(0),
+      cwnd(1), num_packets_delivered(0), inflight(0), delivered(0), delivered_time(0),
       cwnd_gain(2 / log(2)), pacing_gain(2 / log(2)),
       next_send_time(0)
 {}
@@ -21,7 +21,7 @@ Controller::Controller( const bool debug )
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size()
 {  
-  cerr << "inflight = " << (inflight/1424) << "cwnd = " << (cwnd/1424) << endl;
+  cerr << "inflight = " << (inflight/1424) << "cwnd = " << cwnd << endl;
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
    << " window size is " << cwnd << endl;
@@ -117,11 +117,11 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   btlbw_estimate = max_btlbw_sample.data_point;
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
-  if (rtt > 250) {
-    cwnd = cwnd * 0.8;
+  if (rtt > rt_estimate*2) {
+    cwnd--;
   }
 
-  float a = 0.5;
+  float a = 1;
   num_acks++;
   if (num_acks >= cwnd/a) {
     num_acks -= cwnd/a;
