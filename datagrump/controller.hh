@@ -54,7 +54,7 @@ private:
 
   unsigned int startup_rounds_without_increase;
 
-  unsigned int cwnd;
+  int cwnd;
 
   unsigned int num_packets_delivered;
 
