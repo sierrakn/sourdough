@@ -118,15 +118,15 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   btlbw_estimate = max_btlbw_sample.data_point;
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
-  if (rtt > rt_estimate*1.2) {
-    num_congested++;
-    if (num_congested > 2) {
-      cwnd--;
-      num_congested = 0;
-    }
-  } else {
-    num_congested = 0;
-  }
+  // if (rtt > rt_estimate*1.2) {
+  //   num_congested++;
+  //   if (num_congested > 2) {
+  //     cwnd--;
+  //     num_congested = 0;
+  //   }
+  // } else {
+  //   num_congested = 0;
+  // }
 
   if (rtt > 100) {
     super_congested++;
@@ -141,7 +141,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     cwnd = 1;
   }
 
-  float a = 1.5;
+  float a = 1.8;
   num_acks++;
   if (num_acks >= cwnd/a) {
     num_acks -= cwnd/a;
