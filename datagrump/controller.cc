@@ -99,7 +99,8 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   delivered += payload_length;
   delivered_time = timestamp_ack_received;
   // Calculate new BtlBw estimate
-  double delivery_rate = (delivered - packet_delivered) / (delivered_time - packet_delivered_time);
+  double delivery_rate = ((delivered - packet_delivered) / (delivered_time - packet_delivered_time))/1000.0;
+  cerr << "delivered " << delivered << " packet_delivered " << packet_delivered << " delivered_time " << delivered_time << " packet_delivered_time " << packet_delivered_time << endl; 
   btlbw_filter.emplace_back(delivery_rate, timestamp_ack_received);
   remove_old_samples(btlbw_filter, timestamp_ack_received, btlbw_sample_timeout());
   sample max_btlbw_sample = *std::max_element(btlbw_filter.begin(), btlbw_filter.end());
@@ -118,12 +119,16 @@ unsigned int Controller::timeout_ms()
 bool Controller::window_is_open()
 {
   const uint64_t bdp = rt_estimate * btlbw_estimate;
-  unsigned int cwnd = bdp * cwnd_gain;
+  unsigned int cwnd = bdp;
 
   cerr << "inflight = " << inflight << "cwnd = " << cwnd << endl;
 
   if (cwnd == 0) {
     cwnd = 5; 
+  }
+
+  if (cwnd > 50) {
+    cwnd = 50;
   }
   
   if (inflight >= cwnd) {
