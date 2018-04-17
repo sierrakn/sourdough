@@ -9,7 +9,7 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), state(STARTUP), num_congested(0),num_acks(0), rt_sample_timeout(10000), 
+  : debug_( debug ), state(STARTUP), num_congested(0), num_acks(0), rt_sample_timeout(10000), 
       rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(1000),
       btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
@@ -118,7 +118,10 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
   if (rtt > rt_estimate*2) {
-    cwnd--;
+    num_congested++;
+    if (num_congested > 3) {
+      cwnd--;
+    }
   }
 
   float a = 1;
