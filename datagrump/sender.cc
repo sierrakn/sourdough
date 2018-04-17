@@ -118,8 +118,8 @@ void DatagrumpSender::send_datagram( const bool after_timeout )
 
 bool DatagrumpSender::window_is_open()
 {
-  return controller_.window_is_open();
-  // return sequence_number_ - next_ack_expected_ < controller_.window_size();
+  // return controller_.window_is_open();
+  return sequence_number_ - next_ack_expected_ < controller_.window_size();
 }
 
 int DatagrumpSender::loop()
@@ -131,7 +131,7 @@ int DatagrumpSender::loop()
      sending more datagrams */
   poller.add_action( Action( socket_, Direction::Out, [&] () {
 	/* Close the window */
-	while ( window_is_open() ) {
+	while ( window_is_open()) {
     send_datagram( false );
 	}
 	return ResultType::Continue;

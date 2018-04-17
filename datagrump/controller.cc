@@ -13,7 +13,7 @@ Controller::Controller( const bool debug )
       rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(1000),
       btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
-      cwnd(1), inflight(0), delivered(0), delivered_time(0),
+      cwnd(1), num_packets_delivered(0), inflight(0), delivered(0), delivered_time(0),
       cwnd_gain(2 / log(2)), pacing_gain(2 / log(2)),
       next_send_time(0)
 {}
@@ -23,29 +23,29 @@ unsigned int Controller::window_size()
 {  
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
-	 << " window size is " << cwnd << endl;
+   << " window size is " << 17 << endl;
   }
 
-  return cwnd;
+  return 17;
 }
 
 /* A datagram was sent */
 void Controller::datagram_was_sent( const uint64_t sequence_number,
-				    /* of the sent datagram */
-				    const uint64_t send_timestamp,
+            /* of the sent datagram */
+            const uint64_t send_timestamp,
             /* in milliseconds */
             const uint64_t payload_length,
             /* in bytes */
-				    const bool after_timeout
-				    /* datagram was sent because of a timeout */ )
+            const bool after_timeout
+            /* datagram was sent because of a timeout */ )
 {
   if ( debug_ ) {
     cerr << "At time " << send_timestamp
-	 << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")\n";
+   << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")\n";
   }
 
   // cerr << "payload_length = " << payload_length << " btlbw_estimate= " << btlbw_estimate << endl;
-  inflight++;
+  inflight+=payload_length;
 
   //TODO: delete?
   // next_send_time = send_timestamp + payload_length / (pacing_gain * btlbw_estimate);
@@ -60,12 +60,12 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
  * that update the RTprop and BtlBw estimates.
  */
 void Controller::ack_received( const uint64_t sequence_number_acked,
-			       /* what sequence number was acknowledged */
-			       const uint64_t send_timestamp_acked,
-			       /* when the acknowledged datagram was sent (sender's clock) */
-			       const uint64_t recv_timestamp_acked,
-			       /* when the acknowledged datagram was received (receiver's clock)*/
-			       const uint64_t timestamp_ack_received, 
+             /* what sequence number was acknowledged */
+             const uint64_t send_timestamp_acked,
+             /* when the acknowledged datagram was sent (sender's clock) */
+             const uint64_t recv_timestamp_acked,
+             /* when the acknowledged datagram was received (receiver's clock)*/
+             const uint64_t timestamp_ack_received, 
              /* when the ack was received (by sender) */
              const uint64_t payload_length,
              /* payload length of message acked */
@@ -74,16 +74,16 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 {
   if ( debug_ ) {
     cerr << "At time " << timestamp_ack_received
-	 << " received ack for datagram " << sequence_number_acked
-	 << " (send @ time " << send_timestamp_acked
-	 << ", received @ time " << recv_timestamp_acked << " by receiver's clock)"
+   << " received ack for datagram " << sequence_number_acked
+   << " (send @ time " << send_timestamp_acked
+   << ", received @ time " << recv_timestamp_acked << " by receiver's clock)"
    << ", payload length = " << payload_length
-	 << endl;
+   << endl;
   }
 
   // cerr << "packet_delivered " << packet_delivered << " packet_delivered_time " << packet_delivered_time << endl;
 
-  inflight--;
+  inflight-=payload_length;
   double rtt = timestamp_ack_received - send_timestamp_acked;
 
   // Calculate new RTprop estimate (min RTT over time window rt_sample_timeout)
@@ -97,10 +97,13 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   // TODO deal with no update in 10 seconds, initial estimates
 
   delivered += payload_length;
+  num_packets_delivered++;
   delivered_time = timestamp_ack_received;
   // Calculate new BtlBw estimate
-  double delivery_rate = ((delivered - packet_delivered) / (delivered_time - packet_delivered_time))/1000.0;
+  double delivery_rate = ((delivered - packet_delivered) / (delivered_time - packet_delivered_time));
+  // cerr << "num packets delivered" << num_packets_delivered << endl;
   cerr << "delivered " << delivered << " packet_delivered " << packet_delivered << " delivered_time " << delivered_time << " packet_delivered_time " << packet_delivered_time << endl; 
+  // cerr << "delivered " << (delivered - packet_delivered) << " delivered_time " << (delivered_time - packet_delivered_time)<< endl;
   btlbw_filter.emplace_back(delivery_rate, timestamp_ack_received);
   remove_old_samples(btlbw_filter, timestamp_ack_received, btlbw_sample_timeout());
   sample max_btlbw_sample = *std::max_element(btlbw_filter.begin(), btlbw_filter.end());
@@ -119,25 +122,21 @@ unsigned int Controller::timeout_ms()
 bool Controller::window_is_open()
 {
   const uint64_t bdp = rt_estimate * btlbw_estimate;
-  unsigned int cwnd = bdp;
+  unsigned int cwnd = bdp * cwnd_gain;
 
-  cerr << "inflight = " << inflight << "cwnd = " << cwnd << endl;
+  cerr << "inflight = " << (inflight/1424) << "cwnd = " << (cwnd/1424) << endl;
 
   if (cwnd == 0) {
     cwnd = 5; 
-  }
-
-  if (cwnd > 50) {
-    cwnd = 50;
   }
   
   if (inflight >= cwnd) {
     return false;
   }
   
-  if (timestamp_ms() < next_send_time) {
-    return false;
-  }
+  // if (timestamp_ms() < next_send_time) {
+  //   return false;
+  // }
   return true;
 }
 

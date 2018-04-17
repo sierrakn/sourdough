@@ -54,6 +54,8 @@ private:
 
   unsigned int cwnd;
 
+  unsigned int num_packets_delivered;
+
   /* Number of inflight packets */
   unsigned int inflight;
 
