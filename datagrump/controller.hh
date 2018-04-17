@@ -30,6 +30,7 @@ private:
   /* Current state in the BBR FSM */
   bbr_state state;
 
+  unsigned int super_congested;
   unsigned int num_congested;
   unsigned int num_acks;
   /* Max time (in milliseconds) an rt sample is valid.

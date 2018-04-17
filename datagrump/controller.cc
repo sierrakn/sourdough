@@ -9,7 +9,8 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), state(STARTUP), num_congested(0), num_acks(0), rt_sample_timeout(10000), 
+  : debug_( debug ), state(STARTUP), super_congested(0),
+    num_congested(0), num_acks(0), rt_sample_timeout(10000), 
       rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(1000),
       btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
@@ -45,11 +46,11 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
    << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")\n";
   }
 
-  // float b = 0.5;
-  // if (after_timeout) {
-  //   cerr << "TIMEOUT" << endl;
-  //   cwnd = cwnd * b;
-  // }
+  float b = 0.5;
+  if (after_timeout) {
+    cerr << "TIMEOUT" << endl << endl << endl << endl << endl << endl << endl << endl;
+    cwnd = cwnd * b;
+  }
 
   // cerr << "payload_length = " << payload_length << " btlbw_estimate= " << btlbw_estimate << endl;
   inflight+=payload_length;
@@ -127,8 +128,13 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     num_congested = 0;
   }
 
-  if (rtt > 150) {
-    cwnd-=5;
+  if (rtt > 100) {
+    super_congested++;
+    if (super_congested%2 == 1) {
+      cwnd--;
+    }
+  } else {
+    super_congested = 0;
   }
 
   if (cwnd <= 0) {
@@ -147,7 +153,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms()
 {
-  return rt_estimate*1.5; 
+  return rt_estimate*1.2; 
 }
 
 bool Controller::window_is_open()
