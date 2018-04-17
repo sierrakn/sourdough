@@ -123,9 +123,11 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
       cwnd--;
       num_congested = 0;
     }
+  } else {
+    num_congested = 0;
   }
- 
-  if (rtt > rt_estimate*3) {
+
+  if (rtt > 150) {
     cwnd-=5;
   }
 
