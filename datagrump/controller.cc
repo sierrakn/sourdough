@@ -46,7 +46,7 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
    << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")\n";
   }
 
-  float b = 0.5;
+  float b = 0.6;
   if (after_timeout) {
     cerr << "TIMEOUT" << endl << endl << endl << endl << endl << endl << endl << endl;
     cwnd = cwnd * b;
@@ -119,11 +119,11 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
 
-  if (rtt > 80) {
+  if (rtt > 85) {
     num_congested++;
     a = a - 0.1;
-    if (a < 0.8) {
-      a = 0.8;
+    if (a < 0.7) {
+      a = 0.7;
     }
     if (num_congested%2 == 1) {
       cwnd--;
@@ -142,8 +142,8 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     num_acks -= required_acks;
     cwnd += 1; 
     a = a + 0.1;
-    if (a > 3) {
-      a = 3;
+    if (a > 2.5) {
+      a = 2.5;
     }
   }
 }
@@ -152,7 +152,8 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms()
 {
-  return rt_estimate*1.2; 
+  if (rt_estimate < 80 && rt_estimate > 50) return rt_estimate;
+  return 50;
 }
 
 bool Controller::window_is_open()
