@@ -121,7 +121,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 
   if (rtt > 85) {
     num_congested++;
-    a = a - 0.1;
+    a = a - 0.3;
     if (a < 0.7) {
       a = 0.7;
     }
@@ -141,7 +141,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   if (num_acks >= required_acks) {
     num_acks -= required_acks;
     cwnd += 1; 
-    a = a + 0.1;
+    a = a + 0.15;
     if (a > 2.5) {
       a = 2.5;
     }
@@ -152,8 +152,13 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms()
 {
-  if (rt_estimate < 80 && rt_estimate > 50) return rt_estimate;
-  return 50;
+  if (rt_estimate < 50) {
+    return 50;
+  }
+  if (rt_estimate > 80) {
+    return 80;
+  }
+  return rt_estimate;
 }
 
 bool Controller::window_is_open()
