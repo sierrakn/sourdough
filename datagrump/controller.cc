@@ -117,7 +117,16 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   sample max_btlbw_sample = *std::max_element(btlbw_filter.begin(), btlbw_filter.end());
   btlbw_estimate = max_btlbw_sample.data_point;
 
-  cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
+  // cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
+
+  int ideal_window = (rt_estimate * btlbw_estimate)/1424;
+  cerr << "ideal window = " << ideal_window << endl;
+
+  // if (ideal_window - cwnd > 10) {
+  //   cwnd++;
+  // } else if (cwnd - ideal_window > 10) {
+  //   cwnd--;
+  // }
 
   if (rtt > 80) {
     num_congested++;
@@ -130,6 +139,9 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     }
   } else {
     num_congested = 0;
+    if (ideal_window - cwnd > 2) {
+      a = a + 0.05;
+    }
   }
 
   if (cwnd <= 0) {
