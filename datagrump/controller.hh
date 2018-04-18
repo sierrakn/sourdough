@@ -30,6 +30,7 @@ private:
   /* Current state in the BBR FSM */
   bbr_state state;
 
+  float a;
   unsigned int super_congested;
   unsigned int num_congested;
   unsigned int num_acks;
