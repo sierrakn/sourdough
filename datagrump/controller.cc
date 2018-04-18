@@ -9,20 +9,17 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), state(STARTUP), a(2), super_congested(0),
+  : debug_( debug ), a(2), 
     num_congested(0), num_acks(0), rt_sample_timeout(10000), 
       rt_filter(), rt_estimate(0),
-      rt_estimate_last_updated(0), stale_update_threshold(1000),
-      btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
-      cwnd(1), num_packets_delivered(0), inflight(0), delivered(0), delivered_time(0),
-      cwnd_gain(2 / log(2)), pacing_gain(2 / log(2)),
-      next_send_time(0)
+      btlbw_filter(), btlbw_estimate(0), 
+      cwnd(1), num_packets_delivered(0), inflight(0), delivered(0), delivered_time(0)
 {}
 
 /* Get current window size, in datagrams */
 unsigned int Controller::window_size()
 {  
-  cerr << "inflight = " << (inflight/1424) << "cwnd = " << cwnd << endl;
+  cerr << "inflight = " << inflight << "cwnd = " << cwnd << endl;
   if ( debug_ ) {
     cerr << "At time " << timestamp_ms()
    << " window size is " << cwnd << endl;
@@ -43,24 +40,17 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 {
   if ( debug_ ) {
     cerr << "At time " << send_timestamp
-   << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")\n";
+   << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")"
+   << " payload length = " << payload_length << "\n" << endl;
   }
 
   float b = 0.6;
   if (after_timeout) {
-    cerr << "TIMEOUT" << endl << endl << endl << endl << endl << endl << endl << endl;
+    cerr << "TIMEOUT" << endl << endl << endl;
     cwnd = cwnd * b;
   }
 
-  // cerr << "payload_length = " << payload_length << " btlbw_estimate= " << btlbw_estimate << endl;
-  inflight+=payload_length;
-
-  //TODO: delete?
-  // next_send_time = send_timestamp + payload_length / (pacing_gain * btlbw_estimate);
-  next_send_time = send_timestamp;
-  if (debug_) {
-    cerr << "pacing_gain = " << pacing_gain << "time " << (payload_length / (pacing_gain * btlbw_estimate)) << endl;
-  }
+  inflight++;
 }
 
 /* An ack was received 
@@ -89,9 +79,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    << endl;
   }
 
-  // cerr << "packet_delivered " << packet_delivered << " packet_delivered_time " << packet_delivered_time << endl;
-
-  inflight-=payload_length;
+  inflight--;
   double rtt = timestamp_ack_received - send_timestamp_acked;
 
   // Calculate new RTprop estimate (min RTT over time window rt_sample_timeout)
@@ -100,27 +88,25 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   sample min_rtt_sample = *std::min_element(rt_filter.begin(), rt_filter.end());
   if (min_rtt_sample.data_point != rt_estimate) {
     rt_estimate = min_rtt_sample.data_point;
-    rt_estimate_last_updated = timestamp_ack_received;
   }
-  // TODO deal with no update in 10 seconds, initial estimates
 
   delivered += payload_length;
   num_packets_delivered++;
   delivered_time = timestamp_ack_received;
   // Calculate new BtlBw estimate
   double delivery_rate = ((delivered - packet_delivered) / (delivered_time - packet_delivered_time));
-  // cerr << "num packets delivered" << num_packets_delivered << endl;
-  // cerr << "delivered " << delivered << " packet_delivered " << packet_delivered << " delivered_time " << delivered_time << " packet_delivered_time " << packet_delivered_time << endl; 
-  // cerr << "delivered " << (delivered - packet_delivered) << " delivered_time " << (delivered_time - packet_delivered_time)<< endl;
   btlbw_filter.emplace_back(delivery_rate, timestamp_ack_received);
   remove_old_samples(btlbw_filter, timestamp_ack_received, btlbw_sample_timeout());
   sample max_btlbw_sample = *std::max_element(btlbw_filter.begin(), btlbw_filter.end());
   btlbw_estimate = max_btlbw_sample.data_point;
 
-  // cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
 
   int ideal_window = (rt_estimate * btlbw_estimate)/1424;
-  cerr << "ideal window = " << ideal_window << endl;
+  // cerr << "num packets delivered" << num_packets_delivered << endl;
+  // cerr << "delivered " << (delivered - packet_delivered) << " delivered_time " << (delivered_time - packet_delivered_time)<< endl;
+  // cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
+  // cerr << "ideal window = " << ideal_window << endl;
+
 
   if (ideal_window - cwnd > 10) {
     a = a + 0.3;
@@ -135,9 +121,6 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   if (rtt > 80) {
     num_congested++;
     a = a - 0.3;
-    if (a < 0.5) {
-      a = 0.5;
-    }
     if (num_congested%3 == 1) {
       cwnd--;
     }
@@ -149,15 +132,20 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     cwnd = 1;
   }
 
+  if (a < 0.5) {
+    a = 0.5;
+  }
+
+  if (a > 3) {
+    a = 3;
+  }
+
   unsigned int required_acks = cwnd/a;
   num_acks++;
   if (num_acks >= required_acks) {
     num_acks -= required_acks;
     cwnd += 1; 
     a = a + 0.15;
-    if (a > 3) {
-      a = 3;
-    }
   }
 }
 
@@ -172,27 +160,6 @@ unsigned int Controller::timeout_ms()
     return 80;
   }
   return rt_estimate;
-}
-
-bool Controller::window_is_open()
-{
-  const uint64_t bdp = rt_estimate * btlbw_estimate;
-  unsigned int cwnd = bdp * cwnd_gain;
-
-  cerr << "inflight = " << (inflight/1424) << "cwnd = " << (cwnd/1424) << endl;
-
-  if (cwnd == 0) {
-    cwnd = 5; 
-  }
-  
-  if (inflight >= cwnd) {
-    return false;
-  }
-  
-  // if (timestamp_ms() < next_send_time) {
-  //   return false;
-  // }
-  return true;
 }
 
 

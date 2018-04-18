@@ -26,12 +26,8 @@ private:
   } sample;
 
   bool debug_; /* Enables debugging output */
-
-  /* Current state in the BBR FSM */
-  bbr_state state;
-
+  
   float a;
-  unsigned int super_congested;
   unsigned int num_congested;
   unsigned int num_acks;
   /* Max time (in milliseconds) an rt sample is valid.
@@ -42,10 +38,6 @@ private:
   /* Current propagation delay (RTprop) estimate */
   double rt_estimate; 
 
-
-  uint64_t rt_estimate_last_updated; /* Time (in milliseconds) since estimate was updated */
-  unsigned int stale_update_threshold; /* Max time (in milliseconds) an rt estimate can remain the same before we probe for a new estimate */
-
   /* Max time (in milliseconds) a delivery rate sample is valid */
   unsigned int btlbw_sample_timeout(); 
   /* Observed delivery rates within time window btl_bw_sample_timeout() */
@@ -53,8 +45,6 @@ private:
   /* Current bottleneck bandwidth estimate >= delivery rate */
   double btlbw_estimate; 
   
-
-  unsigned int startup_rounds_without_increase;
 
   int cwnd;
 
@@ -66,13 +56,6 @@ private:
   uint64_t delivered;
 
   uint64_t delivered_time;
-
-  /* Multiplier of bdp to calculate allowed # inflight packets */
-  double cwnd_gain;
-
-  double pacing_gain;
-
-  uint64_t next_send_time;
 
   /* Removes samples that have timed out from a filter */
   static void remove_old_samples(std::vector<sample>& filter, uint64_t time_now, uint64_t timeout); 
@@ -104,12 +87,6 @@ public:
   /* How long to wait (in milliseconds) if there are no acks
      before sending one more datagram */
   unsigned int timeout_ms();
-
-  /* Returns true if inflight packets is < cwnd_gain * bdp */
-  bool window_is_open();
-
-  /* Returns true if time is >= next send time */
-  bool should_send_packet();
 
   uint64_t get_delivered();
 
