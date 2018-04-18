@@ -125,7 +125,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     if (a < 0.7) {
       a = 0.7;
     }
-    if (num_congested%2 == 1) {
+    if (num_congested%3 == 1) {
       cwnd--;
     }
   } else {
