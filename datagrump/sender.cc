@@ -97,7 +97,6 @@ void DatagrumpSender::got_ack( const uint64_t timestamp,
 
 void DatagrumpSender::send_datagram( const bool after_timeout )
 {
-
   /* All messages use the same dummy payload */
   static const string dummy_payload( 1424, 'x' );
 
@@ -124,11 +123,11 @@ int DatagrumpSender::loop()
   /* first rule: if the window is open, close it by
      sending more datagrams */
   poller.add_action( Action( socket_, Direction::Out, [&] () {
-        /* Close the window */
-        while ( window_is_open() ) {
-          send_datagram( false );
-        }
-        return ResultType::Continue;
+      /* Close the window */
+      while ( window_is_open() ) {
+        send_datagram( false );
+      }
+      return ResultType::Continue;
       },
       /* We're only interested in this rule when the window is open */
       [&] () { return window_is_open(); } ) );
