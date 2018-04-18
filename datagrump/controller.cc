@@ -9,7 +9,7 @@ using namespace std;
 
 /* Default constructor */
 Controller::Controller( const bool debug )
-  : debug_( debug ), a(2), super_congested(0), num_congested(0), num_acks(0),
+  : debug_( debug ), a(2), num_congested(0), num_acks(0),
     rt_sample_timeout(10000), rt_filter(), rt_estimate(0), cwnd(1)
 {}
 
@@ -39,7 +39,7 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
 
   float b = 0.6;
   if (after_timeout) {
-    cerr << "TIMEOUT" << endl << endl << endl << endl << endl << endl << endl << endl;
+    // cerr << "TIMEOUT" << endl << endl << endl << endl << endl << endl << endl << endl;
     cwnd = cwnd * b;
   }
 }
@@ -70,10 +70,10 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   sample min_rtt_sample = *std::min_element(rt_filter.begin(), rt_filter.end());
   rt_estimate = min_rtt_sample.data_point;
 
-  cerr << "rt = " << rt_estimate << ", a = " << a << endl;
+  // cerr << "rt = " << rt_estimate << ", a = " << a << endl;
 
-  double A_MIN = 0.4;
-  double A_MAX = 4.0;
+  double A_MIN = 0.5;
+  double A_MAX = 3.0;
 
   if (rtt > 80) {
     num_congested++;

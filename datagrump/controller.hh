@@ -26,7 +26,6 @@ private:
   bool debug_; /* Enables debugging output */
 
   float a;
-  unsigned int super_congested;
   unsigned int num_congested;
   unsigned int num_acks;
   /* Max time (in milliseconds) an rt sample is valid.
