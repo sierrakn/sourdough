@@ -36,10 +36,10 @@ push @command, q{./sender $MAHIMAHI_BASE 9090};
 # for the contest, we will send data over Verizon's downlink
 # (datagrump sender's uplink)
 die unless $command[ 3 ] eq "UPLINK";
-$command[ 3 ] = qq{$tracedir/Verizon-LTE-short.down};
+$command[ 3 ] = qq{$tracedir/TMobile-LTE-short.down};
 
 die unless $command[ 4 ] eq "DOWNLINK";
-$command[ 4 ] = qq{$tracedir/Verizon-LTE-short.up};
+$command[ 4 ] = qq{$tracedir/TMobile-LTE-short.up};
 
 system @command;
 

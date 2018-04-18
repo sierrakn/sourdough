@@ -119,11 +119,11 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
 
-  if (rtt > 85) {
+  if (rtt > 80) {
     num_congested++;
     a = a - 0.3;
-    if (a < 0.7) {
-      a = 0.7;
+    if (a < 0.5) {
+      a = 0.5;
     }
     if (num_congested%3 == 1) {
       cwnd--;
@@ -142,8 +142,8 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     num_acks -= required_acks;
     cwnd += 1; 
     a = a + 0.15;
-    if (a > 2.5) {
-      a = 2.5;
+    if (a > 3) {
+      a = 3;
     }
   }
 }
