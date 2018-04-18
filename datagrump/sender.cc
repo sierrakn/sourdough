@@ -123,7 +123,7 @@ int DatagrumpSender::loop()
   /* first rule: if the window is open, close it by
      sending more datagrams */
   poller.add_action( Action( socket_, Direction::Out, [&] () {
-      /* Close the window */
+       /* Close the window */
        while ( window_is_open() ) {
          send_datagram( false );
        }
