@@ -123,7 +123,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     num_congested++;
     if (num_congested%2 == 1) {
       cwnd--;
-      a = a - 0.2;
+      a = a - 0.3;
       if (a < 0.5) {
         a = 0.5;
       }
@@ -141,7 +141,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   if (num_acks >= required_acks) {
     num_acks -= required_acks;
     cwnd += 1; 
-    a = a + 0.1;
+    a = a + 0.05;
     if (a > 2) {
       a = 2;
     }
@@ -152,7 +152,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms()
 {
-  return 50; 
+  return 80; 
 }
 
 bool Controller::window_is_open()
