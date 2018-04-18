@@ -139,8 +139,10 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
     }
   } else {
     num_congested = 0;
-    if (ideal_window - cwnd > 5) {
+    if (ideal_window - cwnd > 3) {
       a = a + 0.1;
+    } else if (cwnd - ideal_window > 10) {
+      a = a - 0.1;
     }
   }
 
