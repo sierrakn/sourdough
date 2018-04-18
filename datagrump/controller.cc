@@ -10,7 +10,7 @@ using namespace std;
 /* Default constructor */
 Controller::Controller( const bool debug )
   : debug_( debug ), state(STARTUP), a(2), super_congested(0),
-    num_congested(0), num_acks(0), rt_sample_timeout(500), 
+    num_congested(0), num_acks(0), rt_sample_timeout(10000), 
       rt_filter(), rt_estimate(0),
       rt_estimate_last_updated(0), stale_update_threshold(1000),
       btlbw_filter(), btlbw_estimate(0), startup_rounds_without_increase(0),
@@ -46,7 +46,7 @@ void Controller::datagram_was_sent( const uint64_t sequence_number,
    << " sent datagram " << sequence_number << " (timeout = "  << after_timeout << ")\n";
   }
 
-  float b = 0.6;
+  float b = 0.5;
   if (after_timeout) {
     cerr << "TIMEOUT" << endl << endl << endl << endl << endl << endl << endl << endl;
     cwnd = cwnd * b;
@@ -119,14 +119,14 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
 
   cerr << "rt = " << rt_estimate << ", btlbw = " << btlbw_estimate << endl;
 
-  if (rtt > 95) {
+  if (rtt > 80) {
     num_congested++;
+    a = a - 0.1;
+    if (a < 0.8) {
+      a = 0.8;
+    }
     if (num_congested%2 == 1) {
       cwnd--;
-      a = a - 0.3;
-      if (a < 0.5) {
-        a = 0.5;
-      }
     }
   } else {
     num_congested = 0;
@@ -141,9 +141,9 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   if (num_acks >= required_acks) {
     num_acks -= required_acks;
     cwnd += 1; 
-    a = a + 0.05;
-    if (a > 2) {
-      a = 2;
+    a = a + 0.1;
+    if (a > 3) {
+      a = 3;
     }
   }
 }
@@ -152,7 +152,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
    before sending one more datagram */
 unsigned int Controller::timeout_ms()
 {
-  return 80; 
+  return rt_estimate*1.2; 
 }
 
 bool Controller::window_is_open()
