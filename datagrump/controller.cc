@@ -123,7 +123,7 @@ void Controller::ack_received( const uint64_t sequence_number_acked,
   cerr << "ideal window = " << ideal_window << endl;
 
   if (ideal_window - cwnd > 10) {
-    a = a + 0.1;
+    a = a + 0.2;
   } else if (cwnd - ideal_window > 10) {
     a = a - 0.1;
   }
