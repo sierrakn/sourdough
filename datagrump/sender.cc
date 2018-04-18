@@ -92,10 +92,7 @@ void DatagrumpSender::got_ack( const uint64_t timestamp,
   controller_.ack_received( ack.header.ack_sequence_number,
 			    ack.header.ack_send_timestamp,
 			    ack.header.ack_recv_timestamp,
-			    timestamp,
-          ack.header.ack_payload_length,
-          ack.header.delivered,
-          ack.header.delivered_time);
+			    timestamp );
 }
 
 void DatagrumpSender::send_datagram( const bool after_timeout )
@@ -104,21 +101,18 @@ void DatagrumpSender::send_datagram( const bool after_timeout )
   /* All messages use the same dummy payload */
   static const string dummy_payload( 1424, 'x' );
 
-  ContestMessage cm( sequence_number_++, controller_.get_delivered(), 
-    controller_.get_delivered_time(), dummy_payload );
+  ContestMessage cm( sequence_number_++, dummy_payload );
   cm.set_send_timestamp();
   socket_.send( cm.to_string() );
 
   /* Inform congestion controller */
   controller_.datagram_was_sent( cm.header.sequence_number,
 				 cm.header.send_timestamp,
-         1424,
 				 after_timeout );
 }
 
 bool DatagrumpSender::window_is_open()
 {
-  // return controller_.window_is_open();
   return sequence_number_ - next_ack_expected_ < controller_.window_size();
 }
 
